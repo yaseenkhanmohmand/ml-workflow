@@ -121,6 +121,16 @@ $IMAGE_NAME
 * Run `python cli.py --search --nums 10 --query "oyster mushrooms" "crimini mushrooms" "amanita mushrooms"`
 * Go and check your GCS bucket to see if `raw.zip` was uploaded. 
 
+## OPTIONAL: Build & Push Data Collector Image
+This step has already been done for this tutorial. For this tutorial in order to make the docker images public we pushed them to docker hub. 
+
+### Pushing Docker Image to Docker Hub
+* Sign up in Docker Hub and create an [Access Token](https://hub.docker.com/settings/security)
+* Login to the Hub: `docker login -u <USER NAME> -p <ACCESS TOKEN>`
+* Build and Tag the Docker Image: `docker build -t <USER NAME>/mushroom-app-data-collector -f Dockerfile .`
+* If you are on M1/2 Macs: Build and Tag the Docker Image: `docker build -t <USER NAME>/mushroom-app-data-collector --platform=linux/amd64/v2 -f Dockerfile .`
+* Push to Docker Hub: `docker push <USER NAME>/mushroom-app-data-collector`
+
 ## Automate Running Data Collector Container
 
 In this section we will use Vertex AI Pipelines to automate running the task in our data collector container
@@ -163,10 +173,4 @@ In this step we will run the data collector container as a serverless task in Ve
 * Go to [Vertex AI Pipeline](https://console.cloud.google.com/vertex-ai/pipelines) to inspect the status of the job
 
 
-### Upload & Deploy Model to Vertex AI
-In this step we first upload our model to Vertex AI Model registry. Then we deploy the model as an endpoint in Vertex AI Online prediction.
-
-* Run `python cli.py --deploy`, this option will both upload and deploy model to Vertex AI
-* This will take a few minutes to complete
-* Once the model has been deployed the endpoint will be displayed. The endpoint will be similar to: `projects/129349313346/locations/us-central1/endpoints/5072058134046965760`
 
