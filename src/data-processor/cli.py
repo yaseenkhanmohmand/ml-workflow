@@ -71,7 +71,7 @@ def main(args=None):
         blob = bucket.blob("clean.zip")
         print("uploading file", zip_file)
         blob.upload_from_filename(zip_file)
-    elif args.prepare:
+    if args.prepare:
         print("Prepare dataset for training")
 
         # Check if clean exists
@@ -100,7 +100,7 @@ def main(args=None):
         blob = bucket.blob("tfrecords.zip")
         print("uploading file", zip_file)
         blob.upload_from_filename(zip_file)
-    elif args.test:
+    if args.test:
         print("Test method")
 
 
