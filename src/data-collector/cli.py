@@ -39,6 +39,7 @@ def main(args=None):
 
         # Download images for each search term
         for search_term in search_term_list:
+            search_term = search_term.replace("+", " ")
             print("Searching for:", search_term)
             downloader.download_bing_images(
                 search_term,
