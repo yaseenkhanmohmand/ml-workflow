@@ -31,23 +31,6 @@ def generate_uuid(length: int = 8) -> str:
 def main(args=None):
     print("CLI Arguments:", args)
 
-    # @dsl.container_component
-    # def say_hello(name: str):
-    #     return dsl.ContainerSpec(
-    #         image="alpine", command=["echo"], args=[f"Hello, {name}!"]
-    #     )
-
-    # @dsl.pipeline
-    # def hello_pipeline(person_to_greet: str):
-    #     say_hello(name=person_to_greet)
-
-    # compiler.Compiler().compile(hello_pipeline, package_path="container_pipeline.yaml")
-
-    # PROJECT_ID = "mlproject01-207413"
-    # BUCKET_URI = "gs://pipeline-test-005"
-    # SERVICE_ACCOUNT = "model-trainer@mlproject01-207413.iam.gserviceaccount.com"
-    # PIPELINE_ROOT = "{}/pipeline_root/intro".format(BUCKET_URI)
-
     if args.data_collector:
         # Define a Container Component
         @dsl.container_component
@@ -75,13 +58,12 @@ def main(args=None):
             data_collector_pipeline, package_path="data_collector.yaml"
         )
 
-        # Submit job to Vertext AI
+        # Submit job to Vertex AI
         aip.init(project=GCP_PROJECT, staging_bucket=BUCKET_URI)
         DISPLAY_NAME = "mushroom-app-data-collector"
 
         job_id = generate_uuid()
         DISPLAY_NAME = "mushroom-app-data-collector-" + job_id
-
         job = aip.PipelineJob(
             display_name=DISPLAY_NAME,
             template_path="data_collector.yaml",
