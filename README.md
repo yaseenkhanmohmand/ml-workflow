@@ -68,3 +68,91 @@ We need a bucket to store files that we will be used by Vertext AI Pipelines dur
 
 - Go to `https://console.cloud.google.com/storage/browser`
 - Create a bucket `mushroom-app-ml-workflow-demo` [REPLACE WITH YOUR BUCKET NAME]
+
+## Data Collector Container
+
+The data collector container does the following:
+* Downloads images from Bing based on the search terms provided
+* Organizes the label folders as the search terms
+* Zip the images and uploads to GCS Bucket
+* If you run `cli.py` with the appropriate arguments your output folder should look like:
+```
+|-raw
+   |---amanita mushrooms
+   |---crimini mushrooms
+   |---oyster mushrooms
+
+```
+
+### Run Container & Test CLI
+#### Run `docker-shell.sh` or `docker-shell.bat`
+Based on your OS, run the startup script to make building & running the container easy
+
+This is what your `docker-shell` file will look like:
+```
+export IMAGE_NAME="mushroom-app-data-collector"
+export BASE_DIR=$(pwd)
+export PERSISTENT_DIR=$(pwd)/../../../persistent-folder/
+export SECRETS_DIR=$(pwd)/../../../secrets/
+export GCP_PROJECT="ac215-project" [REPLACE WITH YOUR PROJECT]
+export GCS_BUCKET_NAME="mushroom-app-ml-workflow-demo" [REPLACE WITH YOUR BUCKET NAME]
+
+# Build the image based on the Dockerfile
+#docker build -t $IMAGE_NAME -f Dockerfile .
+# M1/2 chip macs use this line
+docker build -t $IMAGE_NAME --platform=linux/arm64/v8 -f Dockerfile .
+
+# Run Container
+docker run --rm --name $IMAGE_NAME -ti \
+-v "$BASE_DIR":/app \
+-v "$SECRETS_DIR":/secrets \
+-v "$PERSISTENT_DIR":/persistent \
+-e GOOGLE_APPLICATION_CREDENTIALS=/secrets/data-service-account.json \
+-e GCP_PROJECT=$GCP_PROJECT \
+-e GCS_BUCKET_NAME=$GCS_BUCKET_NAME \
+$IMAGE_NAME
+```
+
+- Make sure you are inside the `data-collector` folder and open a terminal at this location
+- Run `sh docker-shell.sh` or `docker-shell.bat` for windows
+
+#### Test Data Collector
+
+* Run `python cli.py --search --nums 10 --query "oyster mushrooms" "crimini mushrooms" "amanita mushrooms"`
+* Go and check your GCS bucket to see if `raw.zip` was uploaded. 
+
+## Automate Running Data Collector Container
+
+In this section we will use Vertex AI Pipelines to automate running the task in our data collector container
+
+### In the folder `workflow` Run `docker-shell.sh` or `docker-shell.bat`
+Based on your OS, run the startup script to make building & running the container easy
+
+This is what your `docker-shell` file will look like:
+```
+export IMAGE_NAME="mushroom-app-workflow"
+export BASE_DIR=$(pwd)
+export SECRETS_DIR=$(pwd)/../../../secrets/
+export GCP_PROJECT="ac215-project" [REPLACE WITH YOUR PROJECT]
+
+# Build the image based on the Dockerfile
+#docker build -t $IMAGE_NAME -f Dockerfile .
+docker build -t $IMAGE_NAME --platform=linux/amd64 -f Dockerfile .
+
+
+# Run Container
+docker run --rm --name $IMAGE_NAME -ti \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v "$BASE_DIR":/app \
+-v "$SECRETS_DIR":/secrets \
+-v "$BASE_DIR/../data-collector":/data-collector \
+-v "$BASE_DIR/../data-processor":/data-processor \
+-e GOOGLE_APPLICATION_CREDENTIALS=/secrets/ml-workflow.json \
+-e GCP_PROJECT=$GCP_PROJECT \
+$IMAGE_NAME
+```
+
+- Make sure you are inside the `workflow` folder and open a terminal at this location
+- Run `sh docker-shell.sh` or `docker-shell.bat` for windows
+
+### Run Data Collector in Vertex AI
