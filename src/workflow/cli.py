@@ -68,6 +68,7 @@ def main(args=None):
             display_name=DISPLAY_NAME,
             template_path="data_collector.yaml",
             pipeline_root=PIPELINE_ROOT,
+            enable_caching=False,
         )
 
         job.run(service_account=GCS_SERVICE_ACCOUNT)
