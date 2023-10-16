@@ -214,11 +214,11 @@ $IMAGE_NAME
 - Make sure you are inside the `workflow` folder and open a terminal at this location
 - Run `sh docker-shell.sh` or `docker-shell.bat` for windows
 
-### Run Workflow in Vertex AI
+### Run Workflow Pipeline in Vertex AI
 In this step we will run the workflow as serverless tasks in Vertex AI Pipelines.
 
-* Run `python cli.py --workflow`, this will orchestrate all the tasks for the workflow and create a definition file called `workflow.yaml`.
-* Inspect `workflow.yaml`
+* Run `python cli.py --pipeline`, this will orchestrate all the tasks for the workflow and create a definition file called `pipeline.yaml`.
+* Inspect `pipeline.yaml`
 * Go to [Vertex AI Pipeline](https://console.cloud.google.com/vertex-ai/pipelines) to inspect the status of the job
 
 

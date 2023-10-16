@@ -74,7 +74,7 @@ def main(args=None):
 
         job.run(service_account=GCS_SERVICE_ACCOUNT)
 
-    if args.workflow:
+    if args.pipeline:
         # Define a Container Component
         @dsl.container_component
         def data_collector():
@@ -117,17 +117,17 @@ def main(args=None):
             )
 
         # Build yaml file for pipeline
-        compiler.Compiler().compile(ml_pipeline, package_path="workflow.yaml")
+        compiler.Compiler().compile(ml_pipeline, package_path="pipeline.yaml")
 
         # Submit job to Vertex AI
         aip.init(project=GCP_PROJECT, staging_bucket=BUCKET_URI)
-        DISPLAY_NAME = "mushroom-app-workflow"
+        DISPLAY_NAME = "mushroom-app-pipeline"
 
         job_id = generate_uuid()
-        DISPLAY_NAME = "mushroom-app-workflow-" + job_id
+        DISPLAY_NAME = "mushroom-app-pipeline-" + job_id
         job = aip.PipelineJob(
             display_name=DISPLAY_NAME,
-            template_path="workflow.yaml",
+            template_path="pipeline.yaml",
             pipeline_root=PIPELINE_ROOT,
             enable_caching=False,
         )
@@ -148,9 +148,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "-w",
-        "--workflow",
+        "--pipeline",
         action="store_true",
-        help="Mushroom App Workflow",
+        help="Mushroom App Pipeline",
     )
 
     args = parser.parse_args()
