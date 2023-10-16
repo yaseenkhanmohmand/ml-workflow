@@ -144,6 +144,8 @@ export IMAGE_NAME="mushroom-app-workflow"
 export BASE_DIR=$(pwd)
 export SECRETS_DIR=$(pwd)/../../../secrets/
 export GCP_PROJECT="ac215-project" [REPLACE WITH YOUR PROJECT]
+export GCS_BUCKET_NAME="mushroom-app-ml-workflow-demo" [REPLACE WITH YOUR BUCKET NAME]
+export GCS_SERVICE_ACCOUNT="ml-workflow@ac215-project.iam.gserviceaccount.com" [REPLACE WITH YOUR SERVICE ACCOUNT]
 
 # Build the image based on the Dockerfile
 #docker build -t $IMAGE_NAME -f Dockerfile .
@@ -159,6 +161,8 @@ docker run --rm --name $IMAGE_NAME -ti \
 -v "$BASE_DIR/../data-processor":/data-processor \
 -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/ml-workflow.json \
 -e GCP_PROJECT=$GCP_PROJECT \
+-e GCS_BUCKET_NAME=$GCS_BUCKET_NAME \
+-e GCS_SERVICE_ACCOUNT=$GCS_SERVICE_ACCOUNT \
 $IMAGE_NAME
 ```
 

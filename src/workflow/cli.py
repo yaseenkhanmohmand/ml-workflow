@@ -18,7 +18,7 @@ GCP_PROJECT = os.environ["GCP_PROJECT"]
 GCS_BUCKET_NAME = os.environ["GCS_BUCKET_NAME"]
 BUCKET_URI = f"gs://{GCS_BUCKET_NAME}"
 PIPELINE_ROOT = f"{BUCKET_URI}/pipeline_root/root"
-SERVICE_ACCOUNT = "ml-workflow@ac215-project.iam.gserviceaccount.com"
+GCS_SERVICE_ACCOUNT = os.environ["GCS_SERVICE_ACCOUNT"]
 
 # DATA_COLLECTOR_IMAGE = "gcr.io/ac215-project/mushroom-app-data-collector"
 DATA_COLLECTOR_IMAGE = "dlops/mushroom-app-data-collector"
@@ -70,7 +70,7 @@ def main(args=None):
             pipeline_root=PIPELINE_ROOT,
         )
 
-        job.run(service_account=SERVICE_ACCOUNT)
+        job.run(service_account=GCS_SERVICE_ACCOUNT)
 
 
 if __name__ == "__main__":
