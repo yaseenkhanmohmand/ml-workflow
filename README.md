@@ -156,3 +156,17 @@ $IMAGE_NAME
 - Run `sh docker-shell.sh` or `docker-shell.bat` for windows
 
 ### Run Data Collector in Vertex AI
+In this step we will run the data collector container as a serverless task in Vertex AI Pipelines.
+
+* Run `python cli.py --data_collector`, this will package the data collector docker image as a Vertex AI Pipeline job and create a definition file called `data_collector.yaml`. This step also creates an `PipelineJob` to run on Vertex AI
+* Inspect `data_collector.yaml`
+* Go to [Vertex AI Pipeline](https://console.cloud.google.com/vertex-ai/pipelines) to inspect the status of the job
+
+
+### Upload & Deploy Model to Vertex AI
+In this step we first upload our model to Vertex AI Model registry. Then we deploy the model as an endpoint in Vertex AI Online prediction.
+
+* Run `python cli.py --deploy`, this option will both upload and deploy model to Vertex AI
+* This will take a few minutes to complete
+* Once the model has been deployed the endpoint will be displayed. The endpoint will be similar to: `projects/129349313346/locations/us-central1/endpoints/5072058134046965760`
+
