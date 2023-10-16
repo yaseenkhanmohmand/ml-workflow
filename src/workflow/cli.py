@@ -22,6 +22,7 @@ GCS_SERVICE_ACCOUNT = os.environ["GCS_SERVICE_ACCOUNT"]
 
 # DATA_COLLECTOR_IMAGE = "gcr.io/ac215-project/mushroom-app-data-collector"
 DATA_COLLECTOR_IMAGE = "dlops/mushroom-app-data-collector"
+DATA_PROCESSOR_IMAGE = "dlops/mushroom-app-data-processor"
 
 
 def generate_uuid(length: int = 8) -> str:
@@ -43,7 +44,7 @@ def main(args=None):
                     "--search",
                     "--nums 10",
                     "--query oyster+mushrooms crimini+mushrooms amanita+mushrooms",
-                    "--bucket mushroom-app-ml-workflow-demo",
+                    f"--bucket {GCS_BUCKET_NAME}",
                 ],
             )
             return container_spec
@@ -73,6 +74,66 @@ def main(args=None):
 
         job.run(service_account=GCS_SERVICE_ACCOUNT)
 
+    if args.workflow:
+        # Define a Container Component
+        @dsl.container_component
+        def data_collector():
+            container_spec = dsl.ContainerSpec(
+                image=DATA_COLLECTOR_IMAGE,
+                command=[],
+                args=[
+                    "cli.py",
+                    "--search",
+                    "--nums 10",
+                    "--query oyster+mushrooms crimini+mushrooms amanita+mushrooms",
+                    f"--bucket {GCS_BUCKET_NAME}",
+                ],
+            )
+            return container_spec
+
+        @dsl.container_component
+        def data_processor():
+            container_spec = dsl.ContainerSpec(
+                image=DATA_PROCESSOR_IMAGE,
+                command=[],
+                args=[
+                    "cli.py",
+                    "--clean",
+                    "--prepare",
+                    f"--bucket {GCS_BUCKET_NAME}",
+                ],
+            )
+            return container_spec
+
+        # Define a Pipeline
+        @dsl.pipeline
+        def ml_pipeline():
+            data_collector_task = data_collector().set_display_name("Data Collector")
+
+            data_processor_task = (
+                data_processor()
+                .set_display_name("Data Processor")
+                .after(data_collector_task)
+            )
+
+        # Build yaml file for pipeline
+        compiler.Compiler().compile(ml_pipeline, package_path="workflow.yaml")
+
+        # Submit job to Vertex AI
+        aip.init(project=GCP_PROJECT, staging_bucket=BUCKET_URI)
+        DISPLAY_NAME = "mushroom-app-workflow"
+
+        job_id = generate_uuid()
+        DISPLAY_NAME = "mushroom-app-workflow-" + job_id
+        job = aip.PipelineJob(
+            display_name=DISPLAY_NAME,
+            template_path="workflow.yaml",
+            pipeline_root=PIPELINE_ROOT,
+            enable_caching=False,
+        )
+
+        job.run(service_account=GCS_SERVICE_ACCOUNT)
+
 
 if __name__ == "__main__":
     # Generate the inputs arguments parser
@@ -84,6 +145,12 @@ if __name__ == "__main__":
         "--data_collector",
         action="store_true",
         help="Data Collector",
+    )
+    parser.add_argument(
+        "-w",
+        "--workflow",
+        action="store_true",
+        help="Mushroom App Workflow",
     )
 
     args = parser.parse_args()
