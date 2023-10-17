@@ -5,7 +5,7 @@ In this tutorial we will put all the components we built for our Mushroom App to
 * Data Processor: Checks images for duplicates, validate image formats, converts images to TF Records
 * Model Training: Submits training jobs to Vertex AI to train models
 * Model Deploy: Updates trained models signature with preprocessing logic added to it. Upload model to Vertex AI Model Registry and Deploy model to Model Endpoints.
-<img src="images/ml-workflow-managment.png"  width="800">
+<img src="images/ml-pipeline.png"  width="600">
 
 ## Prerequisites
 * Have Docker installed
