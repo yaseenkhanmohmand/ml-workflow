@@ -8,6 +8,8 @@ export PERSISTENT_DIR=$(pwd)/../../../persistent-folder/
 export SECRETS_DIR=$(pwd)/../../../secrets/
 export GCP_PROJECT="ac215-project"
 export GCS_BUCKET_NAME="mushroom-app-ml-workflow-demo"
+export GCP_REGION="us-central1"
+export GCS_PACKAGE_URI="gs://mushroom-app-trainer-code"
 
 
 # Build the image based on the Dockerfile
@@ -23,4 +25,6 @@ docker run --rm --name $IMAGE_NAME -ti \
 -e GOOGLE_APPLICATION_CREDENTIALS=/secrets/model-trainer.json \
 -e GCP_PROJECT=$GCP_PROJECT \
 -e GCS_BUCKET_NAME=$GCS_BUCKET_NAME \
+-e GCP_REGION=$GCP_REGION \
+-e GCS_PACKAGE_URI=$GCS_PACKAGE_URI \
 $IMAGE_NAME
