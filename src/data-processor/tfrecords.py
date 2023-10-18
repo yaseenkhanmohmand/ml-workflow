@@ -116,16 +116,14 @@ def create_tfrecords(clean_folder, tfrecords_folder):
     execution_time = (time.time() - start_time) / 60.0
     print("Execution time (mins)", execution_time)
 
-    # # Split data into multiple TFRecord shards between 100MB to 200MB
-    # num_shards = 4
-
-    # # Create TF Records for validation
-    # start_time = time.time()
-    # # create_tf_records(validate_xy,num_shards=num_shards, prefix="val", folder=tfrecords_output_dir)
-    # delayed_functions = create_tf_records_parallel(
-    #     validate_xy, num_shards=num_shards, prefix="val", folder=tfrecords_output_dir
-    # )
-    # total_shards_created = dask.delayed(np.sum)(delayed_functions)
-    # print("Total shards created:", total_shards_created.compute())
-    # execution_time = (time.time() - start_time) / 60.0
-    # print("Execution time (mins)", execution_time)
+    # Create TF Records for validation
+    start_time = time.time()
+    # Split data into multiple TFRecord shards between 100MB to 200MB
+    num_shards = (len(validate_xy) // 1000) + 1
+    delayed_functions = create_tf_records_parallel(
+        validate_xy, num_shards=num_shards, prefix="val", folder=tfrecords_folder
+    )
+    total_shards_created = dask.delayed(np.sum)(delayed_functions)
+    print("Total shards created:", total_shards_created.compute())
+    execution_time = (time.time() - start_time) / 60.0
+    print("Execution time (mins)", execution_time)
