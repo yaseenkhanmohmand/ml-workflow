@@ -12,7 +12,7 @@ import string
 from kfp import dsl
 from kfp import compiler
 import google.cloud.aiplatform as aip
-from model import model_training
+from model import model_training, model_deploy
 
 
 GCP_PROJECT = os.environ["GCP_PROJECT"]
@@ -120,6 +120,35 @@ def main(args=None):
 
     if args.model_deploy:
         print("Model Deploy")
+
+        # Define a Pipeline
+        @dsl.pipeline
+        def model_deploy_pipeline(
+            GCS_BUCKET_NAME: str = GCS_BUCKET_NAME,
+        ):
+            model_deploy(
+                GCS_BUCKET_NAME=GCS_BUCKET_NAME,
+            )
+
+        # Build yaml file for pipeline
+        compiler.Compiler().compile(
+            model_deploy_pipeline, package_path="model_deploy.yaml"
+        )
+
+        # Submit job to Vertex AI
+        aip.init(project=GCP_PROJECT, staging_bucket=BUCKET_URI)
+        DISPLAY_NAME = "mushroom-app-model-deploy"
+
+        job_id = generate_uuid()
+        DISPLAY_NAME = "mushroom-app-model-deploy-" + job_id
+        job = aip.PipelineJob(
+            display_name=DISPLAY_NAME,
+            template_path="model_deploy.yaml",
+            pipeline_root=PIPELINE_ROOT,
+            enable_caching=False,
+        )
+
+        job.run(service_account=GCS_SERVICE_ACCOUNT)
 
     if args.pipeline:
         # Define a Container Component for data collector
