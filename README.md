@@ -297,3 +297,17 @@ You should be able to see the status of the pipeline in Vertex AI similar to thi
 * For Model Deploy: Run `python cli.py --model_deploy`
 
 
+## Vertex AI Pipelines: Samples
+
+In this section we will simple pipelines and run it on Vertex AI
+
+### In the folder `workflow` Run `docker-shell.sh` or `docker-shell.bat`
+- Make sure you are inside the `workflow` folder and open a terminal at this location
+- Run `sh docker-shell.sh` or `docker-shell.bat` for windows
+
+
+#### Run Simple Pipelines
+
+* Sample Pipeline 1: Run `python cli.py --simple1`
+<img src="images/vertex-ai-simeple-pipeline-1.png"  width="300">
+<br>
