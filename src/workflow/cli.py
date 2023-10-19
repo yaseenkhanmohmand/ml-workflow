@@ -85,17 +85,12 @@ def main(args=None):
 
         # Define a Pipeline
         @dsl.pipeline
-        def model_training_pipeline(
-            GCP_PROJECT: str = GCP_PROJECT,
-            GCP_REGION: str = GCP_REGION,
-            GCS_PACKAGE_URI: str = GCS_PACKAGE_URI,
-            GCS_BUCKET_NAME: str = GCS_BUCKET_NAME,
-        ):
+        def model_training_pipeline():
             model_training(
-                GCP_PROJECT=GCP_PROJECT,
-                GCP_REGION=GCP_REGION,
-                GCS_PACKAGE_URI=GCS_PACKAGE_URI,
-                GCS_BUCKET_NAME=GCS_BUCKET_NAME,
+                project=GCP_PROJECT,
+                location=GCP_REGION,
+                staging_bucket=GCS_PACKAGE_URI,
+                bucket_name=GCS_BUCKET_NAME,
             )
 
         # Build yaml file for pipeline
@@ -123,11 +118,9 @@ def main(args=None):
 
         # Define a Pipeline
         @dsl.pipeline
-        def model_deploy_pipeline(
-            GCS_BUCKET_NAME: str = GCS_BUCKET_NAME,
-        ):
+        def model_deploy_pipeline():
             model_deploy(
-                GCS_BUCKET_NAME=GCS_BUCKET_NAME,
+                bucket_name=GCS_BUCKET_NAME,
             )
 
         # Build yaml file for pipeline
@@ -160,7 +153,7 @@ def main(args=None):
                 args=[
                     "cli.py",
                     "--search",
-                    "--nums 10",
+                    "--nums 50",
                     "--query oyster+mushrooms crimini+mushrooms amanita+mushrooms",
                     f"--bucket {GCS_BUCKET_NAME}",
                 ],
@@ -196,10 +189,14 @@ def main(args=None):
             # Model Training
             model_training_task = (
                 model_training(
-                    GCP_PROJECT=GCP_PROJECT,
-                    GCP_REGION=GCP_REGION,
-                    GCS_PACKAGE_URI=GCS_PACKAGE_URI,
-                    GCS_BUCKET_NAME=GCS_BUCKET_NAME,
+                    project=GCP_PROJECT,
+                    location=GCP_REGION,
+                    staging_bucket=GCS_PACKAGE_URI,
+                    bucket_name=GCS_BUCKET_NAME,
+                    epochs=15,
+                    batch_size=16,
+                    model_name="mobilenetv2",
+                    train_base=False,
                 )
                 .set_display_name("Model Training")
                 .after(data_processor_task)
@@ -207,7 +204,7 @@ def main(args=None):
             # Model Deployment
             model_deploy_task = (
                 model_deploy(
-                    GCS_BUCKET_NAME=GCS_BUCKET_NAME,
+                    bucket_name=GCS_BUCKET_NAME,
                 )
                 .set_display_name("Model Deploy")
                 .after(model_training_task)

@@ -1,28 +1,23 @@
 # PIPELINE DEFINITION
 # Name: model-training-pipeline
-# Inputs:
-#    GCP_PROJECT: str [Default: 'ac215-project']
-#    GCP_REGION: str [Default: 'us-central1']
-#    GCS_BUCKET_NAME: str [Default: 'mushroom-app-ml-workflow-demo']
-#    GCS_PACKAGE_URI: str [Default: 'gs://mushroom-app-trainer-code']
 components:
   comp-model-training:
     executorLabel: exec-model-training
     inputDefinitions:
       parameters:
-        GCP_PROJECT:
+        bucket_name:
           defaultValue: ''
           isOptional: true
           parameterType: STRING
-        GCP_REGION:
+        location:
           defaultValue: ''
           isOptional: true
           parameterType: STRING
-        GCS_BUCKET_NAME:
+        project:
           defaultValue: ''
           isOptional: true
           parameterType: STRING
-        GCS_PACKAGE_URI:
+        staging_bucket:
           defaultValue: ''
           isOptional: true
           parameterType: STRING
@@ -55,19 +50,19 @@ deploymentSpec:
 
           '
         - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
-          \ *\n\ndef model_training(\n    GCP_PROJECT: str = \"\",\n    GCP_REGION:\
-          \ str = \"\",\n    GCS_PACKAGE_URI: str = \"\",\n    GCS_BUCKET_NAME: str\
-          \ = \"\",\n):\n    print(\"Model Training Job\")\n\n    import google.cloud.aiplatform\
-          \ as aip\n\n    # Initialize Vertex AI SDK for Python\n    aip.init(project=GCP_PROJECT,\
-          \ location=GCP_REGION, staging_bucket=GCS_PACKAGE_URI)\n\n    container_uri\
+          \ *\n\ndef model_training(\n    project: str = \"\",\n    location: str\
+          \ = \"\",\n    staging_bucket: str = \"\",\n    bucket_name: str = \"\"\
+          ,\n):\n    print(\"Model Training Job\")\n\n    import google.cloud.aiplatform\
+          \ as aip\n\n    # Initialize Vertex AI SDK for Python\n    aip.init(project=project,\
+          \ location=location, staging_bucket=staging_bucket)\n\n    container_uri\
           \ = \"us-docker.pkg.dev/vertex-ai/training/tf-cpu.2-12.py310:latest\"\n\
-          \    python_package_gcs_uri = f\"{GCS_PACKAGE_URI}/mushroom-app-trainer.tar.gz\"\
+          \    python_package_gcs_uri = f\"{staging_bucket}/mushroom-app-trainer.tar.gz\"\
           \n\n    job = aip.CustomPythonPackageTrainingJob(\n        display_name=\"\
           mushroom-app-training\",\n        python_package_gcs_uri=python_package_gcs_uri,\n\
           \        python_module_name=\"trainer.task\",\n        container_uri=container_uri,\n\
-          \        project=GCP_PROJECT,\n    )\n\n    CMDARGS = [\n        \"--epochs=15\"\
-          ,\n        \"--batch_size=16\",\n        f\"--bucket_name={GCS_BUCKET_NAME}\"\
-          ,\n    ]\n    MODEL_DIR = GCS_PACKAGE_URI\n    TRAIN_COMPUTE = \"n1-standard-4\"\
+          \        project=project,\n    )\n\n    CMDARGS = [\n        \"--epochs=15\"\
+          ,\n        \"--batch_size=16\",\n        f\"--bucket_name={bucket_name}\"\
+          ,\n    ]\n    MODEL_DIR = staging_bucket\n    TRAIN_COMPUTE = \"n1-standard-4\"\
           \n    TRAIN_GPU = \"NVIDIA_TESLA_T4\"\n    TRAIN_NGPU = 1\n\n    print(python_package_gcs_uri)\n\
           \n    # Run the training job on Vertex AI\n    # sync=True, # If you want\
           \ to wait for the job to finish\n    job.run(\n        model_display_name=None,\n\
@@ -87,33 +82,19 @@ root:
           name: comp-model-training
         inputs:
           parameters:
-            GCP_PROJECT:
-              componentInputParameter: GCP_PROJECT
-            GCP_REGION:
-              componentInputParameter: GCP_REGION
-            GCS_BUCKET_NAME:
-              componentInputParameter: GCS_BUCKET_NAME
-            GCS_PACKAGE_URI:
-              componentInputParameter: GCS_PACKAGE_URI
+            bucket_name:
+              runtimeValue:
+                constant: mushroom-app-ml-workflow-demo
+            location:
+              runtimeValue:
+                constant: us-central1
+            project:
+              runtimeValue:
+                constant: ac215-project
+            staging_bucket:
+              runtimeValue:
+                constant: gs://mushroom-app-trainer-code
         taskInfo:
           name: model-training
-  inputDefinitions:
-    parameters:
-      GCP_PROJECT:
-        defaultValue: ac215-project
-        isOptional: true
-        parameterType: STRING
-      GCP_REGION:
-        defaultValue: us-central1
-        isOptional: true
-        parameterType: STRING
-      GCS_BUCKET_NAME:
-        defaultValue: mushroom-app-ml-workflow-demo
-        isOptional: true
-        parameterType: STRING
-      GCS_PACKAGE_URI:
-        defaultValue: gs://mushroom-app-trainer-code
-        isOptional: true
-        parameterType: STRING
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.3.0

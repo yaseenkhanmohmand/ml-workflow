@@ -6,35 +6,43 @@ from kfp import dsl
     base_image="python:3.10", packages_to_install=["google-cloud-aiplatform"]
 )
 def model_training(
-    GCP_PROJECT: str = "",
-    GCP_REGION: str = "",
-    GCS_PACKAGE_URI: str = "",
-    GCS_BUCKET_NAME: str = "",
+    project: str = "",
+    location: str = "",
+    staging_bucket: str = "",
+    bucket_name: str = "",
+    epochs: int = 15,
+    batch_size: int = 16,
+    model_name: str = "mobilenetv2",
+    train_base: bool = False,
 ):
     print("Model Training Job")
 
     import google.cloud.aiplatform as aip
 
     # Initialize Vertex AI SDK for Python
-    aip.init(project=GCP_PROJECT, location=GCP_REGION, staging_bucket=GCS_PACKAGE_URI)
+    aip.init(project=project, location=location, staging_bucket=staging_bucket)
 
     container_uri = "us-docker.pkg.dev/vertex-ai/training/tf-cpu.2-12.py310:latest"
-    python_package_gcs_uri = f"{GCS_PACKAGE_URI}/mushroom-app-trainer.tar.gz"
+    python_package_gcs_uri = f"{staging_bucket}/mushroom-app-trainer.tar.gz"
 
     job = aip.CustomPythonPackageTrainingJob(
         display_name="mushroom-app-training",
         python_package_gcs_uri=python_package_gcs_uri,
         python_module_name="trainer.task",
         container_uri=container_uri,
-        project=GCP_PROJECT,
+        project=project,
     )
 
     CMDARGS = [
-        "--epochs=15",
-        "--batch_size=16",
-        f"--bucket_name={GCS_BUCKET_NAME}",
+        f"--epochs={epochs}",
+        f"--batch_size={batch_size}",
+        f"--model_name={model_name}",
+        f"--bucket_name={bucket_name}",
     ]
-    MODEL_DIR = GCS_PACKAGE_URI
+    if train_base:
+        CMDARGS.append("--train_base")
+
+    MODEL_DIR = staging_bucket
     TRAIN_COMPUTE = "n1-standard-4"
     TRAIN_GPU = "NVIDIA_TESLA_T4"
     TRAIN_NGPU = 1
@@ -60,7 +68,7 @@ def model_training(
     base_image="python:3.10", packages_to_install=["google-cloud-aiplatform"]
 )
 def model_deploy(
-    GCS_BUCKET_NAME: str = "",
+    bucket_name: str = "",
 ):
     print("Model Training Job")
 
@@ -73,7 +81,7 @@ def model_deploy(
     )
 
     display_name = "Mushroom App Model"
-    ARTIFACT_URI = f"gs://{GCS_BUCKET_NAME}/model"
+    ARTIFACT_URI = f"gs://{bucket_name}/model"
 
     # Upload and Deploy model to Vertex AI
     # Reference: https://cloud.google.com/python/docs/reference/aiplatform/latest/google.cloud.aiplatform.Model#google_cloud_aiplatform_Model_upload
