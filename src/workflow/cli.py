@@ -118,6 +118,9 @@ def main(args=None):
 
         job.run(service_account=GCS_SERVICE_ACCOUNT)
 
+    if args.model_deploy:
+        print("Model Deploy")
+
     if args.pipeline:
         # Define a Container Component for data collector
         @dsl.container_component
@@ -202,6 +205,12 @@ if __name__ == "__main__":
         "--model_training",
         action="store_true",
         help="Run just Model Training",
+    )
+    parser.add_argument(
+        "-d",
+        "--model_deploy",
+        action="store_true",
+        help="Run just Model Deployment",
     )
     parser.add_argument(
         "-w",

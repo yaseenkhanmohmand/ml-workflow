@@ -160,6 +160,22 @@ $IMAGE_NAME
 * Run `python cli.py --prepare`
 * Go and check your GCS bucket to see if `tfrecords.zip` was uploaded. 
 
+### OPTIONAL: Run Model Training Container & Test CLI
+#### Run `docker-shell.sh` or `docker-shell.bat`
+Based on your OS, run the startup script to make building & running the container easy
+
+- Make sure you are inside the `model-training` folder and open a terminal at this location
+- Run `sh docker-shell.sh` or `docker-shell.bat` for windows
+
+#### Test Model Training
+
+##### Local Training
+* Run `python -m package.trainer.task --epochs=1 --batch_size=4 --bucket_name=mushroom-app-ml-workflow-demo`
+##### Remote Training
+* Run `sh package-trainer.sh`, this will package the trainer code and upload into a bucket
+* Run `python cli.py --train`, this will invoke a Vertex AI training job
+
+
 ## OPTIONAL: Build & Push Data Collector Image
 This step has already been done for this tutorial. For this tutorial in order to make the docker images public we pushed them to docker hub. 
 
@@ -230,7 +246,9 @@ export BASE_DIR=$(pwd)
 export SECRETS_DIR=$(pwd)/../../../secrets/
 export GCP_PROJECT="ac215-project" [REPLACE WITH YOUR PROJECT]
 export GCS_BUCKET_NAME="mushroom-app-ml-workflow-demo" [REPLACE WITH YOUR BUCKET NAME]
-export GCS_SERVICE_ACCOUNT="ml-workflow@ac215-project.iam.gserviceaccount.com" [REPLACE WITH YOUR SERVICE ACCOUNT]
+export GCS_SERVICE_ACCOUNT="ml-workflow@ac215-project.iam.gserviceaccount.com"
+export GCP_REGION="us-central1" [REPLACE WITH YOUR SERVICE ACCOUNT]
+export GCS_PACKAGE_URI="gs://mushroom-app-trainer-code" [REPLACE WITH YOUR BUCKET NAME]
 
 # Build the image based on the Dockerfile
 #docker build -t $IMAGE_NAME -f Dockerfile .
@@ -248,6 +266,8 @@ docker run --rm --name $IMAGE_NAME -ti \
 -e GCP_PROJECT=$GCP_PROJECT \
 -e GCS_BUCKET_NAME=$GCS_BUCKET_NAME \
 -e GCS_SERVICE_ACCOUNT=$GCS_SERVICE_ACCOUNT \
+-e GCP_REGION=$GCP_REGION \
+-e GCS_PACKAGE_URI=$GCS_PACKAGE_URI \
 $IMAGE_NAME
 ```
 
@@ -257,9 +277,17 @@ $IMAGE_NAME
 ### Run Workflow Pipeline in Vertex AI
 In this step we will run the workflow as serverless tasks in Vertex AI Pipelines.
 
+#### Entire Pipeline
 * Run `python cli.py --pipeline`, this will orchestrate all the tasks for the workflow and create a definition file called `pipeline.yaml`.
 * Inspect `pipeline.yaml`
 * Go to [Vertex AI Pipeline](https://console.cloud.google.com/vertex-ai/pipelines) to inspect the status of the job
 
+
+#### Test Specific Components
+
+* For Data Collector: Run `python cli.py --data_collector`
+* For Data Processor: Run `python cli.py --data_processor`
+* For Model Training: Run `python cli.py --model_training`
+* For Model Deploy: Run `python cli.py --model_deploy`
 
 
