@@ -5,6 +5,34 @@ components:
     executorLabel: exec-data-collector
   comp-data-processor:
     executorLabel: exec-data-processor
+  comp-model-deploy:
+    executorLabel: exec-model-deploy
+    inputDefinitions:
+      parameters:
+        GCS_BUCKET_NAME:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+  comp-model-training:
+    executorLabel: exec-model-training
+    inputDefinitions:
+      parameters:
+        GCP_PROJECT:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        GCP_REGION:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        GCS_BUCKET_NAME:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
+        GCS_PACKAGE_URI:
+          defaultValue: ''
+          isOptional: true
+          parameterType: STRING
 deploymentSpec:
   executors:
     exec-data-collector:
@@ -24,6 +52,96 @@ deploymentSpec:
         - --prepare
         - --bucket mushroom-app-ml-workflow-demo
         image: dlops/mushroom-app-data-processor
+    exec-model-deploy:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - model_deploy
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.3.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'google-cloud-aiplatform'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef model_deploy(\n    GCS_BUCKET_NAME: str = \"\",\n):\n    print(\"\
+          Model Training Job\")\n\n    import google.cloud.aiplatform as aip\n\n \
+          \   # List of prebuilt containers for prediction\n    # https://cloud.google.com/vertex-ai/docs/predictions/pre-built-containers\n\
+          \    serving_container_image_uri = (\n        \"us-docker.pkg.dev/vertex-ai/prediction/tf2-cpu.2-12:latest\"\
+          \n    )\n\n    display_name = \"Mushroom App Model\"\n    ARTIFACT_URI =\
+          \ f\"gs://{GCS_BUCKET_NAME}/model\"\n\n    # Upload and Deploy model to\
+          \ Vertex AI\n    # Reference: https://cloud.google.com/python/docs/reference/aiplatform/latest/google.cloud.aiplatform.Model#google_cloud_aiplatform_Model_upload\n\
+          \    deployed_model = aip.Model.upload(\n        display_name=display_name,\n\
+          \        artifact_uri=ARTIFACT_URI,\n        serving_container_image_uri=serving_container_image_uri,\n\
+          \    )\n    print(\"deployed_model:\", deployed_model)\n    # Reference:\
+          \ https://cloud.google.com/python/docs/reference/aiplatform/latest/google.cloud.aiplatform.Model#google_cloud_aiplatform_Model_deploy\n\
+          \    endpoint = deployed_model.deploy(\n        deployed_model_display_name=display_name,\n\
+          \        traffic_split={\"0\": 100},\n        machine_type=\"n1-standard-4\"\
+          ,\n        accelerator_count=0,\n        min_replica_count=1,\n        max_replica_count=1,\n\
+          \        sync=True,\n    )\n    print(\"endpoint:\", endpoint)\n\n"
+        image: python:3.10
+    exec-model-training:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - model_training
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.3.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'google-cloud-aiplatform'\
+          \ && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef model_training(\n    GCP_PROJECT: str = \"\",\n    GCP_REGION:\
+          \ str = \"\",\n    GCS_PACKAGE_URI: str = \"\",\n    GCS_BUCKET_NAME: str\
+          \ = \"\",\n):\n    print(\"Model Training Job\")\n\n    import google.cloud.aiplatform\
+          \ as aip\n\n    # Initialize Vertex AI SDK for Python\n    aip.init(project=GCP_PROJECT,\
+          \ location=GCP_REGION, staging_bucket=GCS_PACKAGE_URI)\n\n    container_uri\
+          \ = \"us-docker.pkg.dev/vertex-ai/training/tf-cpu.2-12.py310:latest\"\n\
+          \    python_package_gcs_uri = f\"{GCS_PACKAGE_URI}/mushroom-app-trainer.tar.gz\"\
+          \n\n    job = aip.CustomPythonPackageTrainingJob(\n        display_name=\"\
+          mushroom-app-training\",\n        python_package_gcs_uri=python_package_gcs_uri,\n\
+          \        python_module_name=\"trainer.task\",\n        container_uri=container_uri,\n\
+          \        project=GCP_PROJECT,\n    )\n\n    CMDARGS = [\n        \"--epochs=15\"\
+          ,\n        \"--batch_size=16\",\n        f\"--bucket_name={GCS_BUCKET_NAME}\"\
+          ,\n    ]\n    MODEL_DIR = GCS_PACKAGE_URI\n    TRAIN_COMPUTE = \"n1-standard-4\"\
+          \n    TRAIN_GPU = \"NVIDIA_TESLA_T4\"\n    TRAIN_NGPU = 1\n\n    print(python_package_gcs_uri)\n\
+          \n    # Run the training job on Vertex AI\n    # sync=True, # If you want\
+          \ to wait for the job to finish\n    job.run(\n        model_display_name=None,\n\
+          \        args=CMDARGS,\n        replica_count=1,\n        machine_type=TRAIN_COMPUTE,\n\
+          \        # accelerator_type=TRAIN_GPU,\n        # accelerator_count=TRAIN_NGPU,\n\
+          \        base_output_dir=MODEL_DIR,\n        sync=True,\n    )\n\n"
+        image: python:3.10
 pipelineInfo:
   name: ml-pipeline
 root:
@@ -45,5 +163,42 @@ root:
         - data-collector
         taskInfo:
           name: Data Processor
+      model-deploy:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-model-deploy
+        dependentTasks:
+        - model-training
+        inputs:
+          parameters:
+            GCS_BUCKET_NAME:
+              runtimeValue:
+                constant: mushroom-app-ml-workflow-demo
+        taskInfo:
+          name: Model Deploy
+      model-training:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-model-training
+        dependentTasks:
+        - data-processor
+        inputs:
+          parameters:
+            GCP_PROJECT:
+              runtimeValue:
+                constant: ac215-project
+            GCP_REGION:
+              runtimeValue:
+                constant: us-central1
+            GCS_BUCKET_NAME:
+              runtimeValue:
+                constant: mushroom-app-ml-workflow-demo
+            GCS_PACKAGE_URI:
+              runtimeValue:
+                constant: gs://mushroom-app-trainer-code
+        taskInfo:
+          name: Model Training
 schemaVersion: 2.1.0
 sdkVersion: kfp-2.3.0

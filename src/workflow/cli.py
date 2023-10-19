@@ -185,12 +185,32 @@ def main(args=None):
         # Define a Pipeline
         @dsl.pipeline
         def ml_pipeline():
+            # Data Collector
             data_collector_task = data_collector().set_display_name("Data Collector")
-
+            # Data Processor
             data_processor_task = (
                 data_processor()
                 .set_display_name("Data Processor")
                 .after(data_collector_task)
+            )
+            # Model Training
+            model_training_task = (
+                model_training(
+                    GCP_PROJECT=GCP_PROJECT,
+                    GCP_REGION=GCP_REGION,
+                    GCS_PACKAGE_URI=GCS_PACKAGE_URI,
+                    GCS_BUCKET_NAME=GCS_BUCKET_NAME,
+                )
+                .set_display_name("Model Training")
+                .after(data_processor_task)
+            )
+            # Model Deployment
+            model_deploy_task = (
+                model_deploy(
+                    GCS_BUCKET_NAME=GCS_BUCKET_NAME,
+                )
+                .set_display_name("Model Deploy")
+                .after(model_training_task)
             )
 
         # Build yaml file for pipeline
