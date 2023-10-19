@@ -282,6 +282,12 @@ In this step we will run the workflow as serverless tasks in Vertex AI Pipelines
 * Inspect `pipeline.yaml`
 * Go to [Vertex AI Pipeline](https://console.cloud.google.com/vertex-ai/pipelines) to inspect the status of the job
 
+You should be able to see the status of the pipeline in Vertex AI similar to this:
+
+<img src="images/vertex-ai-pipeline-1.png"  width="500">
+<br>
+<img src="images/vertex-ai-pipeline-2.png"  width="500">
+
 
 #### Test Specific Components
 
