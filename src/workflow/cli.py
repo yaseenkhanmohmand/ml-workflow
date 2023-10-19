@@ -12,6 +12,7 @@ import string
 from kfp import dsl
 from kfp import compiler
 import google.cloud.aiplatform as aip
+from model import model_training
 
 
 GCP_PROJECT = os.environ["GCP_PROJECT"]
@@ -19,6 +20,8 @@ GCS_BUCKET_NAME = os.environ["GCS_BUCKET_NAME"]
 BUCKET_URI = f"gs://{GCS_BUCKET_NAME}"
 PIPELINE_ROOT = f"{BUCKET_URI}/pipeline_root/root"
 GCS_SERVICE_ACCOUNT = os.environ["GCS_SERVICE_ACCOUNT"]
+GCS_PACKAGE_URI = os.environ["GCS_PACKAGE_URI"]
+GCP_REGION = os.environ["GCP_REGION"]
 
 # DATA_COLLECTOR_IMAGE = "gcr.io/ac215-project/mushroom-app-data-collector"
 DATA_COLLECTOR_IMAGE = "dlops/mushroom-app-data-collector"
@@ -74,8 +77,49 @@ def main(args=None):
 
         job.run(service_account=GCS_SERVICE_ACCOUNT)
 
+    if args.data_processor:
+        print("Data Processor")
+
+    if args.model_training:
+        print("Model Training")
+
+        # Define a Pipeline
+        @dsl.pipeline
+        def model_training_pipeline(
+            GCP_PROJECT: str = GCP_PROJECT,
+            GCP_REGION: str = GCP_REGION,
+            GCS_PACKAGE_URI: str = GCS_PACKAGE_URI,
+            GCS_BUCKET_NAME: str = GCS_BUCKET_NAME,
+        ):
+            model_training(
+                GCP_PROJECT=GCP_PROJECT,
+                GCP_REGION=GCP_REGION,
+                GCS_PACKAGE_URI=GCS_PACKAGE_URI,
+                GCS_BUCKET_NAME=GCS_BUCKET_NAME,
+            )
+
+        # Build yaml file for pipeline
+        compiler.Compiler().compile(
+            model_training_pipeline, package_path="model_training.yaml"
+        )
+
+        # Submit job to Vertex AI
+        aip.init(project=GCP_PROJECT, staging_bucket=BUCKET_URI)
+        DISPLAY_NAME = "mushroom-app-model-training"
+
+        job_id = generate_uuid()
+        DISPLAY_NAME = "mushroom-app-model-training-" + job_id
+        job = aip.PipelineJob(
+            display_name=DISPLAY_NAME,
+            template_path="model_training.yaml",
+            pipeline_root=PIPELINE_ROOT,
+            enable_caching=False,
+        )
+
+        job.run(service_account=GCS_SERVICE_ACCOUNT)
+
     if args.pipeline:
-        # Define a Container Component
+        # Define a Container Component for data collector
         @dsl.container_component
         def data_collector():
             container_spec = dsl.ContainerSpec(
@@ -91,6 +135,7 @@ def main(args=None):
             )
             return container_spec
 
+        # Define a Container Component for data processor
         @dsl.container_component
         def data_processor():
             container_spec = dsl.ContainerSpec(
@@ -144,7 +189,19 @@ if __name__ == "__main__":
         "-c",
         "--data_collector",
         action="store_true",
-        help="Data Collector",
+        help="Run just the Data Collector",
+    )
+    parser.add_argument(
+        "-p",
+        "--data_processor",
+        action="store_true",
+        help="Run just the Data Processor",
+    )
+    parser.add_argument(
+        "-t",
+        "--model_training",
+        action="store_true",
+        help="Run just Model Training",
     )
     parser.add_argument(
         "-w",
