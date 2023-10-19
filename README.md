@@ -284,9 +284,9 @@ In this step we will run the workflow as serverless tasks in Vertex AI Pipelines
 
 You should be able to see the status of the pipeline in Vertex AI similar to this:
 
-<img src="images/vertex-ai-pipeline-1.png"  width="500">
+<img src="images/vertex-ai-pipeline-1.png"  width="300">
 <br>
-<img src="images/vertex-ai-pipeline-2.png"  width="500">
+<img src="images/vertex-ai-pipeline-2.png"  width="300">
 
 
 #### Test Specific Components
