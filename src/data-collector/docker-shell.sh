@@ -8,8 +8,8 @@ export IMAGE_NAME="mushroom-app-data-collector"
 export BASE_DIR=$(pwd)
 export PERSISTENT_DIR=$(pwd)/../../../persistent-folder/
 export SECRETS_DIR=$(pwd)/../../../secrets/
-export GCP_PROJECT="ac215-project"
-export GCS_BUCKET_NAME="mushroom-app-ml-workflow-demo"
+export GCP_PROJECT="fixer-upper"
+export GCS_BUCKET_NAME="mushroom-app-ml-workflow-demo-inclass"
 
 # Build the image based on the Dockerfile
 #docker build -t $IMAGE_NAME -f Dockerfile .
